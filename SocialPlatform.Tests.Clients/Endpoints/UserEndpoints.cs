@@ -13,6 +13,12 @@ public class UserEndpoints(ApiClient apiClient, ApiSettings apiSettings, Scenari
         return await apiClient.PostAsync(url, request);
     }
 
+    public async Task<ApiBaseResponse> RegisterAsync(RegisterRequest request)
+    {
+        var url = apiSettings.Urls.Register;
+        return await apiClient.PostAsync(url, request);
+    }
+
     public async Task<ApiBaseResponse> PendingUsersAsync()
     {
         var authHeader = GetAuthHeader();

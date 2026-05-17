@@ -4,4 +4,5 @@ public static class ScenarioContextKeys
 {
     public const string Token = "Token";
     public const string ApiResponse = "ApiResponse";
+    public const string ApiRequest = "ApiRequest";
 }

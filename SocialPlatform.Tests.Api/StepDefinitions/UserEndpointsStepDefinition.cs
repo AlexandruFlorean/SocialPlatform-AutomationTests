@@ -5,15 +5,17 @@ using SocialPlatform.Tests.Clients.Base;
 using SocialPlatform.Tests.Clients.Clients;
 using SocialPlatform.Tests.Common.Constants;
 using SocialPlatform.Tests.Common.DatabaseContext;
+using SocialPlatform.Tests.Common.Enums;
 using SocialPlatform.Tests.Common.Models.Requests;
 using SocialPlatform.Tests.Common.Models.Response;
+using System.ComponentModel.DataAnnotations;
 using System.Net;
 
 namespace SocialPlatform.Tests.Api.StepDefinitions;
 
 [Binding]
 public class UserEndPointsStepDefinition(
-    SocialPlatformApiClient client, 
+    SocialPlatformApiClient client,
     ScenarioContext scenarioContext,
     SocialPlatformDbContext dbContext)
 {
@@ -50,11 +52,53 @@ public class UserEndPointsStepDefinition(
         scenarioContext.Add(ScenarioContextKeys.ApiResponse, response);
     }
 
+    [When("register")]
+    public async Task Register()
+    {
+        var registerRequest = new RegisterRequest
+        {
+            FirstName = "Norbert-Istvan",
+            LastName = "Vincze",
+            Email = "norbert.vincze@gmail.com",
+            Password = "Password!@#4",
+            PublicContent = false
+        };
+        scenarioContext.Add(ScenarioContextKeys.ApiRequest, registerRequest);
+
+        var response = await client.UserEndpoints.RegisterAsync(registerRequest);
+        scenarioContext.Add(ScenarioContextKeys.ApiResponse, response);
+    }
+
     [Then("login should be successful")]
     public void ThenLoginShouldBeSuccessful()
     {
         var response = scenarioContext.Get<ApiBaseResponse>(ScenarioContextKeys.ApiResponse)!;
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+    }
+
+    [Then("registration should be successful")]
+    public void RegistrationShouldBeSuccessful()
+    {
+        var response = scenarioContext.Get<ApiBaseResponse>(ScenarioContextKeys.ApiResponse)!;
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+    }
+
+    [Then("user has correctly saved details")]
+    public async Task RegisterShouldBeSuccessful()
+    {
+        var request = scenarioContext.Get<RegisterRequest>(ScenarioContextKeys.ApiRequest)!;
+        var registeredUser = await dbContext.Users.AsNoTracking().FirstAsync(u => u.Email == request.Email);
+        Assert.That(registeredUser, Is.Not.Null);
+        Assert.That(registeredUser.Email, Is.Not.Null);
+        Assert.That(registeredUser.FirstName, Is.Not.Null);
+        Assert.That(registeredUser.FirstName, Is.EqualTo(request.FirstName));
+        Assert.That(registeredUser.LastName, Is.Not.Null);
+        Assert.That(registeredUser.LastName, Is.EqualTo(request.LastName));
+        Assert.That(registeredUser.Password, Is.Not.Null);
+        Assert.That(registeredUser.Password, Is.EqualTo(request.Password));
+        Assert.That(registeredUser.PublicContent, Is.EqualTo(request.PublicContent));
+        Assert.That(registeredUser.Active, Is.False);
+        Assert.That(registeredUser.Role, Is.EqualTo((short)Role.Client));
     }
 
     [Then("expected number of pending users should be returned")]
@@ -63,7 +107,7 @@ public class UserEndPointsStepDefinition(
         var response = scenarioContext.Get<ApiBaseResponse>(ScenarioContextKeys.ApiResponse)!;
         Assert.That(response, Is.Not.Null);
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-        
+
 
         var pendingUsersResponse = response.Deserialize<BaseResponse<List<UserDtoResponse>>>();
         Assert.That(pendingUsersResponse, Is.Not.Null);
@@ -71,4 +115,5 @@ public class UserEndPointsStepDefinition(
         var actualPendingUsersCount = pendingUsersResponse.Response.Count;
         Assert.That(actualPendingUsersCount, Is.EqualTo(expectedPendingUsersCount));
     }
+    
 }

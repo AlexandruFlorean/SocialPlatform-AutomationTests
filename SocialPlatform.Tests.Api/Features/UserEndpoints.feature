@@ -8,3 +8,9 @@ Feature: User Login
         Given authenticated user
         When fetch pending users
         Then expected number of pending users should be returned
+    
+    @CleanUp-DeleteUser
+    Scenario: Register new user
+        When register
+        Then registration should be successful
+        Then user has correctly saved details
