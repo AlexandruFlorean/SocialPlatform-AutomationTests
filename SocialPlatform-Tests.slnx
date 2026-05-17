@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="SocialPlatform.Tests.Api/SocialPlatform.Tests.Api.csproj" />
+  <Project Path="SocialPlatform.Tests.Clients/SocialPlatform.Tests.Clients.csproj" />
+  <Project Path="SocialPlatform.Tests.Common/SocialPlatform.Tests.Common.csproj" />
+  <Project Path="SocialPlatform.Tests.Web/SocialPlatform.Tests.Web.csproj" />
+</Solution>
