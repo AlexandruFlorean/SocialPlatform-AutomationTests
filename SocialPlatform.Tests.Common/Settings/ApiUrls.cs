@@ -4,4 +4,6 @@ public class ApiUrls
 {
     public required string Login { get; set; }
     public required string PendingUsers { get; set; }
+
+    public required string Register { get; set; }
 }

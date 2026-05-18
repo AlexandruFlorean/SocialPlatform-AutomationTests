@@ -105,7 +105,7 @@ namespace SocialPlatform.Tests.Api.Features
         
         private static global::Reqnroll.Formatters.RuntimeSupport.FeatureLevelCucumberMessages InitializeCucumberMessages()
         {
-            return new global::Reqnroll.Formatters.RuntimeSupport.FeatureLevelCucumberMessages("Features/UserEndpoints.feature.ndjson", 4);
+            return new global::Reqnroll.Formatters.RuntimeSupport.FeatureLevelCucumberMessages("Features/UserEndpoints.feature.ndjson", 7);
         }
         
         [global::NUnit.Framework.TestAttribute()]
@@ -166,6 +166,108 @@ namespace SocialPlatform.Tests.Api.Features
 #line hidden
 #line 10
         await testRunner.ThenAsync("expected number of pending users should be returned", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+            }
+            await this.ScenarioCleanupAsync();
+        }
+        
+        [global::NUnit.Framework.TestAttribute()]
+        [global::NUnit.Framework.DescriptionAttribute("Register new user")]
+        [global::NUnit.Framework.CategoryAttribute("CleanUp-DeleteUser")]
+        public async global::System.Threading.Tasks.Task RegisterNewUser()
+        {
+            string[] tagsOfScenario = new string[] {
+                    "CleanUp-DeleteUser"};
+            global::System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new global::System.Collections.Specialized.OrderedDictionary();
+            string pickleIndex = "2";
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Register new user", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
+            string[] tagsOfRule = ((string[])(null));
+            global::Reqnroll.RuleInfo ruleInfo = null;
+#line 13
+    this.ScenarioInitialize(scenarioInfo, ruleInfo);
+#line hidden
+            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
+            {
+                await testRunner.SkipScenarioAsync();
+            }
+            else
+            {
+                await this.ScenarioStartAsync();
+#line 14
+        await testRunner.WhenAsync("register", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 15
+        await testRunner.ThenAsync("registration should be successful", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 16
+        await testRunner.ThenAsync("user has correctly saved details", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+            }
+            await this.ScenarioCleanupAsync();
+        }
+        
+        [global::NUnit.Framework.TestAttribute()]
+        [global::NUnit.Framework.DescriptionAttribute("Register new user with existing email")]
+        public async global::System.Threading.Tasks.Task RegisterNewUserWithExistingEmail()
+        {
+            string[] tagsOfScenario = ((string[])(null));
+            global::System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new global::System.Collections.Specialized.OrderedDictionary();
+            string pickleIndex = "3";
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Register new user with existing email", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
+            string[] tagsOfRule = ((string[])(null));
+            global::Reqnroll.RuleInfo ruleInfo = null;
+#line 18
+    this.ScenarioInitialize(scenarioInfo, ruleInfo);
+#line hidden
+            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
+            {
+                await testRunner.SkipScenarioAsync();
+            }
+            else
+            {
+                await this.ScenarioStartAsync();
+#line 19
+        await testRunner.GivenAsync("existing user with email", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+#line hidden
+#line 20
+        await testRunner.ThenAsync("the response status code should be \"Conflict\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 21
+        await testRunner.AndAsync("the response message should be \"Email address already registered\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+            }
+            await this.ScenarioCleanupAsync();
+        }
+        
+        [global::NUnit.Framework.TestAttribute()]
+        [global::NUnit.Framework.DescriptionAttribute("Register fails when password does not meet requirments")]
+        public async global::System.Threading.Tasks.Task RegisterFailsWhenPasswordDoesNotMeetRequirments()
+        {
+            string[] tagsOfScenario = ((string[])(null));
+            global::System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new global::System.Collections.Specialized.OrderedDictionary();
+            string pickleIndex = "4";
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Register fails when password does not meet requirments", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
+            string[] tagsOfRule = ((string[])(null));
+            global::Reqnroll.RuleInfo ruleInfo = null;
+#line 23
+    this.ScenarioInitialize(scenarioInfo, ruleInfo);
+#line hidden
+            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
+            {
+                await testRunner.SkipScenarioAsync();
+            }
+            else
+            {
+                await this.ScenarioStartAsync();
+#line 24
+        await testRunner.WhenAsync("I attempt to register with password \"<Password>\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 25
+        await testRunner.ThenAsync("the response status code should be \"BadRequest\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 26
+        await testRunner.AndAsync("the response message should be \"[password must contain at least one letter, one n" +
+                        "umber, one special character, and have a minimum length of 8]\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();

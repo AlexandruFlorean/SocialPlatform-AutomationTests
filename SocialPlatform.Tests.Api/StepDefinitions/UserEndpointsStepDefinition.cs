@@ -5,15 +5,18 @@ using SocialPlatform.Tests.Clients.Base;
 using SocialPlatform.Tests.Clients.Clients;
 using SocialPlatform.Tests.Common.Constants;
 using SocialPlatform.Tests.Common.DatabaseContext;
+using SocialPlatform.Tests.Common.Enums;
 using SocialPlatform.Tests.Common.Models.Requests;
 using SocialPlatform.Tests.Common.Models.Response;
+using System.ComponentModel.DataAnnotations;
 using System.Net;
+using System.Net.WebSockets;
 
 namespace SocialPlatform.Tests.Api.StepDefinitions;
 
 [Binding]
 public class UserEndPointsStepDefinition(
-    SocialPlatformApiClient client, 
+    SocialPlatformApiClient client,
     ScenarioContext scenarioContext,
     SocialPlatformDbContext dbContext)
 {
@@ -28,6 +31,23 @@ public class UserEndPointsStepDefinition(
         var response = await client.UserEndpoints.LoginAsync(loginRequest);
         var loginResponse = response.Deserialize<BaseResponse<LoginResponse>>();
         scenarioContext.Add(ScenarioContextKeys.Token, loginResponse.Response.Token);
+    }
+
+    [Given("existing user with email")]
+    public async Task GivenExistingUserWithEmail()
+    {
+        var registerdUser = await dbContext.Users.AsNoTracking().FirstAsync();
+        var registerRequest = new RegisterRequest
+        {
+            FirstName = registerdUser.FirstName,
+            LastName = registerdUser.LastName,
+            Email = registerdUser.Email,
+            Password = registerdUser.Password,
+            PublicContent = registerdUser.PublicContent
+        };
+        var response = await client.UserEndpoints.RegisterAsync(registerRequest);
+        scenarioContext.Add(ScenarioContextKeys.ApiResponse, response);
+
     }
 
     [When("fetch pending users")]
@@ -50,11 +70,68 @@ public class UserEndPointsStepDefinition(
         scenarioContext.Add(ScenarioContextKeys.ApiResponse, response);
     }
 
+    [When("register")]
+    public async Task Register()
+    {
+        var registerRequest = new RegisterRequest
+        {
+            FirstName = "Norbert-Istvan",
+            LastName = "Vincze",
+            Email = "norbert.vincze@gmail.com",
+            Password = "Password!@#4",
+            PublicContent = false
+        };
+        scenarioContext.Add(ScenarioContextKeys.ApiRequest, registerRequest);
+
+        var response = await client.UserEndpoints.RegisterAsync(registerRequest);
+        scenarioContext.Add(ScenarioContextKeys.ApiResponse, response);
+    }
+
+    [When("I attempt to register with password {string}")]
+    public async Task WhenIAttemptToRegisterWithPassword(string password)
+    {
+        var registerRequest = new RegisterRequest
+        {
+            FirstName = "Test",
+            LastName = "User",
+            Email = $"test_{Guid.NewGuid()}@example.com",
+            Password = password,
+            PublicContent = false
+        };
+        var response = await client.UserEndpoints.RegisterAsync(registerRequest);
+        scenarioContext.Add(ScenarioContextKeys.ApiResponse, response);
+    }
+
     [Then("login should be successful")]
     public void ThenLoginShouldBeSuccessful()
     {
         var response = scenarioContext.Get<ApiBaseResponse>(ScenarioContextKeys.ApiResponse)!;
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+    }
+
+    [Then("registration should be successful")]
+    public void RegistrationShouldBeSuccessful()
+    {
+        var response = scenarioContext.Get<ApiBaseResponse>(ScenarioContextKeys.ApiResponse)!;
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+    }
+
+    [Then("user has correctly saved details")]
+    public async Task RegisterShouldBeSuccessful()
+    {
+        var request = scenarioContext.Get<RegisterRequest>(ScenarioContextKeys.ApiRequest)!;
+        var registeredUser = await dbContext.Users.AsNoTracking().FirstAsync(u => u.Email == request.Email);
+        Assert.That(registeredUser, Is.Not.Null);
+        Assert.That(registeredUser.Email, Is.Not.Null);
+        Assert.That(registeredUser.FirstName, Is.Not.Null);
+        Assert.That(registeredUser.FirstName, Is.EqualTo(request.FirstName));
+        Assert.That(registeredUser.LastName, Is.Not.Null);
+        Assert.That(registeredUser.LastName, Is.EqualTo(request.LastName));
+        Assert.That(registeredUser.Password, Is.Not.Null);
+        Assert.That(registeredUser.Password, Is.EqualTo(request.Password));
+        Assert.That(registeredUser.PublicContent, Is.EqualTo(request.PublicContent));
+        Assert.That(registeredUser.Active, Is.False);
+        Assert.That(registeredUser.Role, Is.EqualTo((short)Role.Client));
     }
 
     [Then("expected number of pending users should be returned")]
@@ -63,12 +140,42 @@ public class UserEndPointsStepDefinition(
         var response = scenarioContext.Get<ApiBaseResponse>(ScenarioContextKeys.ApiResponse)!;
         Assert.That(response, Is.Not.Null);
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-        
+
 
         var pendingUsersResponse = response.Deserialize<BaseResponse<List<UserDtoResponse>>>();
         Assert.That(pendingUsersResponse, Is.Not.Null);
         var expectedPendingUsersCount = await dbContext.Users.CountAsync(u => !u.Active);
         var actualPendingUsersCount = pendingUsersResponse.Response.Count;
         Assert.That(actualPendingUsersCount, Is.EqualTo(expectedPendingUsersCount));
+    }
+
+    [Then("the response status code should be \"Conflict\"")]
+    public void ThenTheResponseStatusCodeShouldBeConflict()
+    {
+        var response = scenarioContext.Get<ApiBaseResponse>(ScenarioContextKeys.ApiResponse);
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Conflict));
+    }
+
+    [Then("the response message should be \"Email address already registered\"")]
+    public void ThenTheResponseMessageShouldBeEmailAddressAlreadyRegistered()
+    {
+        var response = scenarioContext.Get<ApiBaseResponse>(ScenarioContextKeys.ApiResponse);
+        var baseResponse = response.Deserialize<BaseResponse<RegisterResponse>>();
+        Assert.That(baseResponse.Error, Is.EqualTo("Email address already registered"));
+    }
+
+    [Then("the response status code should be \"BadRequest\"")]
+    public void ThenTheResponseStatusCodeShouldBeBadRequest()
+    {
+        var response = scenarioContext.Get<ApiBaseResponse>(ScenarioContextKeys.ApiResponse);
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+    }
+
+    [Then("the response message should be \"[password must contain at least one letter, one number, one special character, and have a minimum length of 8]\"")]
+    public void ThenTheResponseMessageShouldBePasswordValidationMessage()
+    {
+        var response = scenarioContext.Get<ApiBaseResponse>(ScenarioContextKeys.ApiResponse);
+        var baseResponse = response.Deserialize<BaseResponse<RegisterResponse>>();
+        Assert.That(baseResponse.Error, Is.EqualTo("[password must contain at least one letter, one number, one special character, and have a minimum length of 8]"));
     }
 }
