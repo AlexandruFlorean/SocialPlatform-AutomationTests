@@ -10,6 +10,7 @@ using SocialPlatform.Tests.Common.Models.Requests;
 using SocialPlatform.Tests.Common.Models.Response;
 using System.ComponentModel.DataAnnotations;
 using System.Net;
+using System.Net.WebSockets;
 
 namespace SocialPlatform.Tests.Api.StepDefinitions;
 
@@ -30,6 +31,23 @@ public class UserEndPointsStepDefinition(
         var response = await client.UserEndpoints.LoginAsync(loginRequest);
         var loginResponse = response.Deserialize<BaseResponse<LoginResponse>>();
         scenarioContext.Add(ScenarioContextKeys.Token, loginResponse.Response.Token);
+    }
+
+    [Given("existing user with email")]
+    public async Task GivenExistingUserWithEmail()
+    {
+        var registerdUser = await dbContext.Users.AsNoTracking().FirstAsync();
+        var registerRequest = new RegisterRequest
+        {
+            FirstName = registerdUser.FirstName,
+            LastName = registerdUser.LastName,
+            Email = registerdUser.Email,
+            Password = registerdUser.Password,
+            PublicContent = registerdUser.PublicContent
+        };
+        var response = await client.UserEndpoints.RegisterAsync(registerRequest);
+        scenarioContext.Add(ScenarioContextKeys.ApiResponse, response);
+
     }
 
     [When("fetch pending users")]
@@ -65,6 +83,21 @@ public class UserEndPointsStepDefinition(
         };
         scenarioContext.Add(ScenarioContextKeys.ApiRequest, registerRequest);
 
+        var response = await client.UserEndpoints.RegisterAsync(registerRequest);
+        scenarioContext.Add(ScenarioContextKeys.ApiResponse, response);
+    }
+
+    [When("I attempt to register with password {string}")]
+    public async Task WhenIAttemptToRegisterWithPassword(string password)
+    {
+        var registerRequest = new RegisterRequest
+        {
+            FirstName = "Test",
+            LastName = "User",
+            Email = $"test_{Guid.NewGuid()}@example.com",
+            Password = password,
+            PublicContent = false
+        };
         var response = await client.UserEndpoints.RegisterAsync(registerRequest);
         scenarioContext.Add(ScenarioContextKeys.ApiResponse, response);
     }
@@ -115,5 +148,34 @@ public class UserEndPointsStepDefinition(
         var actualPendingUsersCount = pendingUsersResponse.Response.Count;
         Assert.That(actualPendingUsersCount, Is.EqualTo(expectedPendingUsersCount));
     }
-    
+
+    [Then("the response status code should be \"Conflict\"")]
+    public void ThenTheResponseStatusCodeShouldBeConflict()
+    {
+        var response = scenarioContext.Get<ApiBaseResponse>(ScenarioContextKeys.ApiResponse);
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Conflict));
+    }
+
+    [Then("the response message should be \"Email address already registered\"")]
+    public void ThenTheResponseMessageShouldBeEmailAddressAlreadyRegistered()
+    {
+        var response = scenarioContext.Get<ApiBaseResponse>(ScenarioContextKeys.ApiResponse);
+        var baseResponse = response.Deserialize<BaseResponse<RegisterResponse>>();
+        Assert.That(baseResponse.Error, Is.EqualTo("Email address already registered"));
+    }
+
+    [Then("the response status code should be \"BadRequest\"")]
+    public void ThenTheResponseStatusCodeShouldBeBadRequest()
+    {
+        var response = scenarioContext.Get<ApiBaseResponse>(ScenarioContextKeys.ApiResponse);
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+    }
+
+    [Then("the response message should be \"[password must contain at least one letter, one number, one special character, and have a minimum length of 8]\"")]
+    public void ThenTheResponseMessageShouldBePasswordValidationMessage()
+    {
+        var response = scenarioContext.Get<ApiBaseResponse>(ScenarioContextKeys.ApiResponse);
+        var baseResponse = response.Deserialize<BaseResponse<RegisterResponse>>();
+        Assert.That(baseResponse.Error, Is.EqualTo("[password must contain at least one letter, one number, one special character, and have a minimum length of 8]"));
+    }
 }
